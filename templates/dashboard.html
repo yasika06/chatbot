@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Dashboard - AI Shield</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="page-dashboard">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-shield-halved"></i> PrivacyShield</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item"><i class="fa-solid fa-message"></i> Secure Chat</a>
+                <a href="/dashboard" class="nav-item active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="themeToggle" class="btn-theme-toggle">
+                    <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="chat-header">
+                <div class="header-info">
+                    <h1>Privacy Overview</h1>
+                    <span class="secure-badge"><i class="fa-solid fa-chart-pie"></i> Real-time Analytics</span>
+                </div>
+            </header>
+
+            <div class="dashboard-container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue">
+                            <i class="fa-solid fa-comment-dots"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Total Prompts Scanned</h3>
+                            <p id="stat-prompts">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon icon-red">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Sensitive Intrusions Prevented</h3>
+                            <p id="stat-sensitive">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green">
+                            <i class="fa-solid fa-file-arrow-up"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Files Uploaded</h3>
+                            <p id="stat-files">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple">
+                            <i class="fa-solid fa-file-shield"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Files Encrypted</h3>
+                            <p id="stat-encrypted">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: var(--bg-secondary); padding: 2rem; border-radius: var(--border-radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+                    <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Protection Activity Log</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                        The AI Privacy Shield actively monitors all outbound traffic to external AI models.
+                        We scan payloads for Personally Identifiable Information (PII) such as Phone numbers, 
+                        Email addresses, Aadhaar numbers, Passwords, and API Keys.
+                        <br><br>
+                        Any detected sensitive information is automatically redacted before transmission. 
+                        Files uploaded with direct sensitive content are immediately fully encrypted on local storage using AES-256 for optimal security.
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

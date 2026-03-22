@@ -1,0 +1,7 @@
+__pycache__/
+*.rc
+.env
+privacy_bot.db
+uploads/
+encrypted_uploads/
+.vercel

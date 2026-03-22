@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Privacy Shield Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="page-chat">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-shield-halved"></i> PrivacyShield</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item active"><i class="fa-solid fa-message"></i> Secure Chat</a>
+                <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="/history" class="nav-item"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="themeToggle" class="btn-theme-toggle">
+                    <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="chat-header">
+                <div class="header-info">
+                    <h1>Secure AI Chat</h1>
+                    <span class="secure-badge"><i class="fa-solid fa-lock"></i> End-to-End Scanned</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <select id="privacyModeToggle" style="border: 1px solid #ccc; border-radius: 8px; padding: 6px 12px; font-weight: 500; cursor: pointer; height: 36px; background: white; color: #333;">
+                        <option value="partial">Partial Masking</option>
+                        <option value="strict">Strict Masking</option>
+                    </select>
+                    <button id="clearChatBtn" class="btn-secondary" style="background-color: #fee2e2; color: #dc2626; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; height: 36px;"><i class="fa-solid fa-trash"></i> Clear Chat</button>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="fileInput" class="file-input" accept=".txt,.pdf,.docx">
+                        <label for="fileInput" class="btn-upload"><i class="fa-solid fa-paperclip"></i> Upload</label>
+                    </div>
+                </div>
+            </header>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai-message">
+                        <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                        <div class="content">
+                            <p>Hello! I'm your Privacy Shield AI. Your prompts and files are scanned and masked before reaching me. How can I help you today?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div id="maskPreviewBox" class="hidden" style="font-size: 0.85rem; color: #92400e; margin-bottom: 8px; padding: 8px 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px;">
+                        <i class="fa-solid fa-lock"></i> <strong>Masked Preview:</strong> <span id="maskPreviewText"></span>
+                    </div>
+                    <form id="chatForm">
+                        <textarea id="promptInput" placeholder="Type a message (PII will be auto-masked)..." rows="1"></textarea>
+                        <button type="submit" class="btn-send" id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
+                    <div class="typing-indicator hidden" id="typingIndicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Scan Warning / Confirmation -->
+    <div id="warningModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> Security Warning</h3>
+                <button class="close-btn" id="closeWarningBtn">&times;</button>
+            </div>
+            <div class="modal-body" id="warningBody">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer" id="warningFooter">
+                <button class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn-primary" id="confirmBtn">Proceed Anyway</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
