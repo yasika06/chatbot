@@ -12,5 +12,10 @@
       "src": "/(.*)",
       "dest": "app.py"
     }
-  ]
+  ],
+  "env": {
+    "GOOGLE_API_KEY": "AIzaSyCQq7uKcev138JomdfZeQqJX6KSxF97_Vo",
+    "SECRET_KEY": "yoursecretkeyhere",
+    "DB_ENCRYPTION_KEY": "ecZFkfGG9HkU9iwgy-aMNQ9vqLPloV60X7ie34V9BHc="
+  }
 }
