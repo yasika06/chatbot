@@ -1,5 +1,7 @@
 import os
+# pyrefly: ignore [missing-import]
 from flask import Flask, render_template, request, jsonify
+# pyrefly: ignore [missing-import]
 from werkzeug.utils import secure_filename
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -119,10 +121,9 @@ def chat():
     
     try:
         if client and client_type == 'gemini':
-            active_model = "gemini-2.5-flash-lite"
-            print(f"OK: Direct API call to Gemini ({active_model}) with history context...")
+            gemini_models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"]
             
-            contents = ["System: You are a helpful privacy-first AI assistant."]
+            contents = ["System: You are a highly knowledgeable, friendly, and helpful AI assistant. You can answer any question on any topic — including science, technology, coding, math, history, geography, health, creative writing, general knowledge, daily life advice, and more. Always provide clear, accurate, and detailed answers. If the user asks in Tamil or Tanglish, reply in the same language. You also have built-in privacy protection that automatically masks sensitive data before it reaches you."]
             for msg in history_context:
                 prefix = "User: " if msg.get('role') == "user" else "Assistant: "
                 contents.append(prefix + str(msg.get('content', '')))
@@ -130,12 +131,24 @@ def chat():
             contents.append("User: " + masked_prompt)
             prompt_text = "\n\n".join(contents)
             
-            response = client.models.generate_content(
-                model=active_model,
-                contents=prompt_text
-            )
-            ai_response = response.text
-            print(f"OK: Got Gemini AI response: {ai_response[:50]}...")
+            last_err = None
+            for model_name in gemini_models:
+                try:
+                    print(f"OK: Trying Gemini model ({model_name})...")
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt_text
+                    )
+                    ai_response = response.text
+                    print(f"OK: Got Gemini AI response from {model_name}: {ai_response[:50]}...")
+                    break
+                except Exception as model_err:
+                    last_err = model_err
+                    print(f"[Warning] Gemini {model_name} failed: {model_err}")
+                    continue
+                    
+            if not ai_response and last_err:
+                raise last_err
             
         elif client and client_type == 'openai':
             # Select model based on API provider
@@ -145,7 +158,7 @@ def chat():
                 
             print(f"OK: Direct API call to OpenAI/Groq ({active_model}) with history context...")
             
-            messages = [{"role": "system", "content": "You are a helpful privacy-first AI assistant."}]
+            messages = [{"role": "system", "content": "You are a highly knowledgeable, friendly, and helpful AI assistant. You can answer any question on any topic — including science, technology, coding, math, history, geography, health, creative writing, general knowledge, daily life advice, and more. Always provide clear, accurate, and detailed answers. If the user asks in Tamil or Tanglish, reply in the same language. You also have built-in privacy protection that automatically masks sensitive data before it reaches you."}]
             for msg in history_context:
                 role = "user" if msg.get('role') == "user" else "assistant"
                 messages.append({"role": role, "content": msg.get('content', '')})
@@ -165,17 +178,21 @@ def chat():
         error_msg = str(e)
         print(f"Error: Error calling AI API: {error_msg}")
         
+        provider_name = "Gemini" if client_type == 'gemini' else "OpenAI"
+        
         # Check for specific error types
-        if "insufficient_quota" in error_msg or "429" in error_msg:
-            ai_response = "[Warning] OpenAI API quota exceeded. Please add credits to your OpenAI account at https://platform.openai.com/account/billing or create a new account for free credits."
-        elif "invalid_api_key" in error_msg:
-            ai_response = "Error: Invalid OpenAI API key. Please check your .env file."
+        if "503" in error_msg or "UNAVAILABLE" in error_msg:
+            ai_response = f"⚠️ The AI servers ({provider_name}) are currently experiencing high demand. Please try asking your question again in a moment."
+        elif "insufficient_quota" in error_msg or "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            ai_response = f"⚠️ {provider_name} API rate limit or quota exceeded. Please try again shortly or check your billing/quota."
+        elif "invalid_api_key" in error_msg or "API_KEY_INVALID" in error_msg:
+            ai_response = f"Error: Invalid {provider_name} API key. Please check your .env file."
         else:
-            ai_response = f"Error: OpenAI API Error: {error_msg}"
+            ai_response = f"Error: {provider_name} API Error: {error_msg}"
     
     # Fallback to mock if no response
     if not ai_response:
-        ai_response = "I am a mock response because the OpenAI API key is missing. I would have replied to: " + masked_prompt
+        ai_response = "I am a mock response because the API key is missing. I would have replied to: " + masked_prompt
             
     # record the interaction. We replace user_prompt with masked_prompt so no raw data is saved
     chat_id = save_chat(masked_prompt, masked_prompt, ai_response, sensitive=bool(findings))

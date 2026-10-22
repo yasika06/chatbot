@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Theme Toggle
+    // ── Theme Toggle ──
     const themeToggleBtn = document.getElementById('themeToggle');
     const root = document.documentElement;
     
-    // Check local storage for theme
     const savedTheme = localStorage.getItem('theme') || 'light';
     if (savedTheme === 'dark') {
         root.setAttribute('data-theme', 'dark');
@@ -13,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggleBtn.addEventListener('click', () => {
         const currentTheme = root.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
         root.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
@@ -31,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Elements
+    // ── Elements ──
     const chatForm = document.getElementById('chatForm');
     const promptInput = document.getElementById('promptInput');
     const chatMessages = document.getElementById('chatMessages');
@@ -41,11 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const privacyModeToggle = document.getElementById('privacyModeToggle');
     const maskPreviewBox = document.getElementById('maskPreviewBox');
     const maskPreviewText = document.getElementById('maskPreviewText');
+    const welcomeState = document.getElementById('welcomeState');
     
+    // ── Clear Chat ──
     if (clearChatBtn) {
         clearChatBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete the current chat? This will remove these messages from your history as well.')) {
-                // Delete from backend history DB
+            if (confirm('Clear chat and remove from history?')) {
                 const idsToDelete = currentChatHistory.filter(msg => msg.id).map(msg => msg.id);
                 const uniqueIds = [...new Set(idsToDelete)];
                 uniqueIds.forEach(id => {
@@ -57,11 +56,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 currentChatHistory = [];
+                chatMessages.innerHTML = '';
+                // Re-add welcome state
                 chatMessages.innerHTML = `
-                    <div class="message ai-message">
-                        <div class="avatar"><i class="fa-solid fa-robot"></i></div>
-                        <div class="content">
-                            <p>Chat cleared! How can I help you today?</p>
+                    <div class="welcome-container" id="welcomeState">
+                        <div class="welcome-icon">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h2>AI PrivacyShield</h2>
+                        <p>Chat cleared! Ask me anything — I'm ready to help.</p>
+                        <div class="welcome-features">
+                            <div class="welcome-chip"><i class="fa-solid fa-brain"></i> Ask Anything</div>
+                            <div class="welcome-chip"><i class="fa-solid fa-lock"></i> Auto PII Masking</div>
+                            <div class="welcome-chip"><i class="fa-solid fa-code"></i> Code Help</div>
+                            <div class="welcome-chip"><i class="fa-solid fa-file-shield"></i> File Encryption</div>
                         </div>
                     </div>`;
                 sessionStorage.removeItem('continueContext');
@@ -69,41 +77,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Modal Elements
+    // ── Modal Elements ──
     const warningModal = document.getElementById('warningModal');
     const closeWarningBtn = document.getElementById('closeWarningBtn');
-    const acknowledgeBtn = document.getElementById('acknowledgeBtn');
     const warningBody = document.getElementById('warningBody');
 
     let currentChatHistory = [];
     
-    // Check if we are continuing a conversation
+    // ── Continue Conversation ──
     const savedContext = sessionStorage.getItem('continueContext');
     if (savedContext) {
         try {
             const historyContext = JSON.parse(savedContext);
             sessionStorage.removeItem('continueContext');
             
-            // Render the old messages to the UI and save to local state
+            // Hide welcome state
+            if (welcomeState) welcomeState.style.display = 'none';
+            
             historyContext.forEach(msg => {
                 const sender = msg.role === 'user' ? 'user' : 'ai';
                 appendMessage(sender, msg.content);
                 currentChatHistory.push(msg);
             });
             
-            appendMessage('ai', '💬 Context loaded from history. You can continue the conversation below.');
+            appendMessage('ai', '💬 Context loaded from history. Continue your conversation below.');
         } catch (e) {
             console.error("Failed to parse continue context", e);
         }
     }
 
-    // Auto-resize textarea and handle real-time mask preview
+    // ── Auto-resize & Live Mask Preview ──
     let maskTimeout = null;
     let currentMaskedPreview = "";
 
     promptInput.addEventListener('input', function() {
         this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
+        this.style.height = Math.min(this.scrollHeight, 200) + 'px';
         if (this.value === '') {
             this.style.height = 'auto';
         }
@@ -137,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     });
 
-    // Submit on Enter (Shift+Enter for new line)
+    // ── Submit on Enter ──
     promptInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -147,19 +156,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle Chat Submit
+    // ── Handle Chat Submit ──
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const text = promptInput.value.trim();
         if (!text) return;
         
-        // Reset input immediately
+        // Hide welcome state on first message
+        const ws = document.getElementById('welcomeState');
+        if (ws) ws.style.display = 'none';
+        
         promptInput.value = '';
         promptInput.style.height = 'auto';
         maskPreviewBox.classList.add('hidden');
         
-        // Front-end fetch to get the masked version for instant UI display
+        // Get masked version for UI display
         let finalMasked = text;
         try {
             const mRes = await fetch('/api/mask', {
@@ -171,14 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
             finalMasked = mData.masked_text || text;
         } catch (err) {}
         
-        // Add only the masked user message to UI instantly
         appendMessage('user', finalMasked);
         
-        // Show typing indicator
         typingIndicator.classList.remove('hidden');
         scrollToBottom();
 
-        // wrapper to actually send the chat request
         const sendChat = async (confirm = false) => {
             const res = await fetch('/api/chat', {
                 method: 'POST',
@@ -192,12 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
             let response = await sendChat(false);
             let data = await response.json();
 
-            // if server warns about sensitive data, show confirmation modal
             if (!response.ok && data.warning === 'sensitive_detected') {
                 showConfirmModal(data, async () => {
-                    // user chose to proceed
-                    // append details to chat so they know what was sent
-                    appendMessage('ai', '🔒 Sensitive information detected, sending masked prompt.');
+                    appendMessage('ai', '🔒 Sensitive data detected — sending masked version.');
                     typingIndicator.classList.remove('hidden');
                     const resp2 = await sendChat(true);
                     const dat2 = await resp2.json();
@@ -212,10 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentChatHistory.push({ role: 'assistant', content: dat2.response, id: dat2.id });
                 });
             } else {
-                // Hide typing indicator
                 typingIndicator.classList.add('hidden');
                 
-                // Handle findings visually if any
                 if (data.findings && Object.keys(data.findings).length > 0) {
                     appendMessage('ai', data.response, data.findings, data.risk_score, data.masked_prompt);
                 } else {
@@ -228,17 +232,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             typingIndicator.classList.add('hidden');
-            appendMessage('ai', 'Sorry, I encountered an error communicating with the server.');
+            appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
             console.error(error);
         }
     });
 
-    // Handle File Upload
+    // ── Handle File Upload ──
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
-        appendMessage('user', `📄 Uploading file: ${file.name}`);
+        // Hide welcome state
+        const ws = document.getElementById('welcomeState');
+        if (ws) ws.style.display = 'none';
+        
+        appendMessage('user', `📎 Uploading: ${file.name}`);
         typingIndicator.classList.remove('hidden');
         scrollToBottom();
         
@@ -258,16 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.error) {
                 appendMessage('ai', `❌ Upload failed: ${data.error}`);
             } else {
-                let msg = `✅ File **${data.filename}** processed successfully.`;
+                let msg = `✅ **${data.filename}** processed successfully.`;
                 
                 if (data.encrypted) {
-                    msg += `<br><br>⚠️ **Security Alert**: Sensitive data was detected in your file. 
-                            <br>The file has been encrypted to protect your privacy.
-                            <br>🔒 **New File**: ${data.encrypted_filename}
-                            <br>🔑 **Password**: <code>${data.password}</code>`;
+                    msg += `\n\n⚠️ **Security Alert**: Sensitive data detected in your file.`;
+                    msg += `\nThe file has been **encrypted** to protect your privacy.`;
+                    msg += `\n🔒 **Encrypted File**: ${data.encrypted_filename}`;
+                    msg += `\n🔑 **Password**: \`${data.password}\``;
                             
-                    // Show Modal Warning
-                    showWarningModal(`We detected sensitive information in your uploaded file (<strong>${file.name}</strong>). To protect your privacy, we have automatically encrypted it on our server. Please save your generated password.`);
+                    showWarningModal(`Sensitive information detected in <strong>${file.name}</strong>. The file has been automatically encrypted. Please save your generated password.`);
                 }
                 
                 appendMessage('ai', msg, data.findings, data.risk_score);
@@ -278,49 +285,109 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(error);
         }
         
-        // Reset file input
         fileInput.value = '';
     });
 
+    // ── Format AI text with markdown-like rendering ──
+    function formatText(text) {
+        // Escape HTML first
+        let formatted = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        
+        // Code blocks (```)
+        formatted = formatted.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+            return `<pre><code>${code.trim()}</code></pre>`;
+        });
+        
+        // Inline code
+        formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        // Bold
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // Italic
+        formatted = formatted.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+        
+        // Line breaks to paragraphs
+        const paragraphs = formatted.split(/\n\n+/);
+        if (paragraphs.length > 1) {
+            formatted = paragraphs.map(p => {
+                if (p.startsWith('<pre>')) return p;
+                // Handle bullet points within a paragraph
+                const lines = p.split('\n');
+                const processed = lines.map(line => {
+                    if (/^[\-\*]\s/.test(line)) {
+                        return line;
+                    }
+                    return line;
+                }).join('\n');
+                return `<p>${processed}</p>`;
+            }).join('');
+        }
+        
+        // Handle bullet lists
+        formatted = formatted.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
+        formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+        
+        // Handle numbered lists
+        formatted = formatted.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+        
+        // Single newlines to <br>
+        formatted = formatted.replace(/(?<!<\/p>|<\/pre>|<\/li>|<\/ul>|<\/ol>)\n(?!<p|<pre|<li|<ul|<ol)/g, '<br>');
+        
+        return formatted;
+    }
+
+    // ── Append Message (ChatGPT-style layout) ──
     function appendMessage(sender, text, findings = null, riskScore = 'Low', maskedPrompt = null) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}-message`;
         
-        let iconHtml = sender === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-robot"></i>';
+        const iconHtml = sender === 'user' 
+            ? '<i class="fa-solid fa-user"></i>' 
+            : '<i class="fa-solid fa-shield-halved"></i>';
         
-        // Parse basic markdown-like syntax for bold and code
-        let formattedText = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/`(.*?)`/g, '<code style="background:#e2e8f0;padding:2px 4px;border-radius:4px;color:#ef4444;">$1</code>');
+        let formattedText = sender === 'ai' ? formatText(text) : `<p>${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`;
         
-        let contentHtml = `<p>${formattedText}</p>`;
+        let contentHtml = formattedText;
         
-        // If AI detected PII, add the findings box
+        // Findings box for PII detection
         if (sender === 'ai' && findings && Object.keys(findings).length > 0) {
             let findingsHtml = `<div class="findings-box">
-                <span class="risk-badge risk-${riskScore}">Risk Score: ${riskScore}</span>
-                <p style="font-size: 0.8rem; margin-bottom: 0.5rem; color: #b45309;">⚠️ Sensitive information detected, message masked before sending</p>
-                <div style="font-size: 0.8rem;">`;
+                <span class="risk-badge risk-${riskScore}">Risk: ${riskScore}</span>
+                <p style="font-size: 0.82rem; margin-bottom: 8px; color: var(--warning);">⚠️ Sensitive data detected and masked before sending</p>
+                <div style="font-size: 0.82rem;">`;
                 
             for (const [category, items] of Object.entries(findings)) {
-                findingsHtml += `<div class="finding-item"><strong>${category}:</strong> Found ${items.length} instance(s)</div>`;
+                findingsHtml += `<div class="finding-item"><strong>${category}:</strong> ${items.length} instance(s) found</div>`;
             }
             
             if (maskedPrompt) {
-                 findingsHtml += `<div style="margin-top:0.5rem; padding-top:0.5rem; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                    <strong>Masked Input Sent:</strong>
-                    <p style="color: #4b5563; font-style: italic; margin-top:0.25rem;">"${maskedPrompt}"</p>
-                 </div>`;
+                findingsHtml += `<div style="margin-top:8px; padding-top:8px; border-top: 1px solid rgba(245, 158, 11, 0.15);">
+                    <strong>Sent as:</strong>
+                    <span style="color: var(--text-secondary); font-style: italic;"> "${maskedPrompt}"</span>
+                </div>`;
             }
             
             findingsHtml += `</div></div>`;
             contentHtml += findingsHtml;
         }
 
-        msgDiv.innerHTML = `
-            <div class="avatar">${iconHtml}</div>
-            <div class="content">${contentHtml}</div>
-        `;
+        if (sender === 'ai') {
+            // AI messages get full-width background treatment (like ChatGPT)
+            msgDiv.innerHTML = `
+                <div class="message-inner">
+                    <div class="avatar">${iconHtml}</div>
+                    <div class="content">${contentHtml}</div>
+                </div>`;
+        } else {
+            // User messages
+            msgDiv.innerHTML = `
+                <div class="avatar">${iconHtml}</div>
+                <div class="content">${contentHtml}</div>`;
+        }
         
         chatMessages.appendChild(msgDiv);
         scrollToBottom();
@@ -330,33 +397,32 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
-    // Modal logic
+    // ── Modal Logic ──
     function showWarningModal(message) {
         warningBody.innerHTML = `<p>${message}</p>`;
-        // hide confirm/cancel buttons in this mode
         document.getElementById('confirmBtn').classList.add('hidden');
         document.getElementById('cancelBtn').classList.add('hidden');
-        document.getElementById('acknowledgeBtn')?.classList?.remove('hidden');
+        const acknowledgeBtnEl = document.getElementById('acknowledgeBtn');
+        if (acknowledgeBtnEl) acknowledgeBtnEl.classList.remove('hidden');
         warningModal.classList.remove('hidden');
     }
 
     function showConfirmModal(data, onConfirm) {
-        // data contains findings, risk_score, masked_prompt
-        let html = `<p>⚠️ Sensitive data was detected in your message.</p>`;
-        html += `<div style="font-size:0.9rem; margin-top:0.5rem;">`;
+        let html = `<p style="margin-bottom:12px;">⚠️ Sensitive data was detected in your message:</p>`;
+        html += `<div style="font-size:0.88rem;">`;
         for (const [cat, items] of Object.entries(data.findings)) {
-            html += `<div><strong>${cat}:</strong> ${items.length} instance(s)</div>`;
+            html += `<div style="margin-bottom:4px;"><strong style="text-transform:capitalize;">${cat}:</strong> ${items.length} instance(s)</div>`;
         }
         html += `</div>`;
         if (data.masked_prompt) {
-            html += `<p style="margin-top:0.5rem;"><strong>Masked text:</strong> <em>${data.masked_prompt}</em></p>`;
+            html += `<p style="margin-top:12px; padding:10px; background: var(--bg-app); border-radius: var(--radius-sm); font-size:0.88rem;"><strong>Will be sent as:</strong><br><em style="color:var(--text-secondary);">"${data.masked_prompt}"</em></p>`;
         }
-        html += `<p style="margin-top:0.5rem;">Do you want to send this masked version to the AI?</p>`;
         warningBody.innerHTML = html;
-        // show confirm/cancel buttons
+        
         document.getElementById('confirmBtn').classList.remove('hidden');
         document.getElementById('cancelBtn').classList.remove('hidden');
-        document.getElementById('acknowledgeBtn')?.classList?.add('hidden');
+        const acknowledgeBtnEl = document.getElementById('acknowledgeBtn');
+        if (acknowledgeBtnEl) acknowledgeBtnEl.classList.add('hidden');
         warningModal.classList.remove('hidden');
 
         const confirmHandler = () => {
@@ -376,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const hideModal = () => warningModal.classList.add('hidden');
     closeWarningBtn.addEventListener('click', hideModal);
-    // existing acknowledgeBtn may not exist now, but if present
     const acknowledgeBtnElement = document.getElementById('acknowledgeBtn');
     if (acknowledgeBtnElement) acknowledgeBtnElement.addEventListener('click', hideModal);
     

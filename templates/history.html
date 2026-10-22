@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat History - PrivacyShield</title>
+    <title>Chat History — AI PrivacyShield</title>
+    <meta name="description" content="View your chat history with sensitive data protection. Unlock, lock, and manage your conversation logs.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,10 +13,10 @@
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fa-solid fa-shield-halved"></i> PrivacyShield</h2>
+                <h2><i class="fa-solid fa-shield-halved"></i> AI PrivacyShield</h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="/" class="nav-item"><i class="fa-solid fa-message"></i> Secure Chat</a>
+                <a href="/" class="nav-item"><i class="fa-solid fa-message"></i> Chat</a>
                 <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
                 <a href="/history" class="nav-item active"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
             </nav>
@@ -27,26 +28,29 @@
         </aside>
         <main class="main-content">
             <header class="chat-header">
-                <h1>Conversation History</h1>
+                <div class="header-info">
+                    <h1>Chat History</h1>
+                    <span class="secure-badge"><i class="fa-solid fa-circle"></i> Encrypted Storage</span>
+                </div>
             </header>
             <section class="history-controls">
                 <div class="history-unlock">
-                    <label for="historyPwd">Unlock Sensitive Entries:</label>
-                    <input type="password" id="historyPwd" placeholder="password" class="input-sm">
+                    <label for="historyPwd" style="font-size: 0.875rem; font-weight: 500;">Unlock Sensitive Entries:</label>
+                    <input type="password" id="historyPwd" placeholder="Enter password" class="input-sm">
                     <button id="unlockBtn" class="btn-primary">Unlock</button>
-                    <button id="clearAllBtn" class="btn-danger">Clear All History</button>
-                    <button id="clearFilesBtn" class="btn-danger">Delete Uploaded Files</button>
+                    <button id="clearAllBtn" class="btn-danger">Clear All</button>
+                    <button id="clearFilesBtn" class="btn-danger">Delete Files</button>
                     <span id="historyMessage" class="field-message"></span>
                 </div>
                 <div class="history-password-change">
                     <h3>Change Lock Password</h3>
-                    <input type="password" id="currentPwd" placeholder="current password" class="input-sm">
-                    <input type="password" id="newPwd" placeholder="new password" class="input-sm">
+                    <input type="password" id="currentPwd" placeholder="Current password" class="input-sm">
+                    <input type="password" id="newPwd" placeholder="New password" class="input-sm">
                     <button id="changePwdBtn" class="btn-secondary">Set Password</button>
                     <span id="pwdMsg" class="field-message success"></span>
                 </div>
             </section>
-            <section class="history-list" id="historyList" style="margin-top:2rem;">
+            <section class="history-list" id="historyList" style="margin-top:0;">
                 <!-- history entries injected by JS -->
             </section>
         </main>
