@@ -55,6 +55,13 @@
             </section>
         </main>
     </div>
+    <!-- Mobile bottom navigation (phones only) -->
+    <nav class="mobile-nav">
+        <a href="/"><i class="fa-solid fa-message"></i>Chat</a>
+        <a href="/dashboard"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
+        <a href="/history" class="active"><i class="fa-solid fa-clock-rotate-left"></i>History</a>
+    </nav>
+
     <script src="{{ url_for('static', filename='js/history.js') }}"></script>
 </body>
 </html>
