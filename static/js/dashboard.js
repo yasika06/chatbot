@@ -79,4 +79,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Refresh stats every 10 seconds
     setInterval(loadStats, 10000);
+
+    const dashboardClearFilesBtn = document.getElementById('dashboardClearFilesBtn');
+    if (dashboardClearFilesBtn) {
+        dashboardClearFilesBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to delete all stored files and reset file counters to 0?')) return;
+            try {
+                const res = await fetch('/api/files/delete', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || 'All files deleted and counters reset!');
+                    loadStats();
+                } else {
+                    alert('Failed to delete files.');
+                }
+            } catch(e) {
+                alert('Error connecting to server.');
+            }
+        });
+    }
 });

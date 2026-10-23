@@ -1,115 +1,309 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Privacy Shield — Secure AI Chat</title>
-    <meta name="description" content="AI Privacy Shield - A ChatGPT-like AI assistant that automatically protects your sensitive data. Ask anything, stay private.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI PrivacyShield — Secure AI Chat</title>
+<meta name="description" content="AI PrivacyShield - Premium AI assistant that automatically detects and masks sensitive personal data before sending to AI models.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=6">
 </head>
 <body class="page-chat">
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2><i class="fa-solid fa-shield-halved"></i> AI PrivacyShield</h2>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="/" class="nav-item active"><i class="fa-solid fa-message"></i> Chat</a>
-                <a href="/dashboard" class="nav-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-                <a href="/history" class="nav-item"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
-            </nav>
-            <div class="sidebar-footer">
-                <button id="themeToggle" class="btn-theme-toggle">
-                    <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
-                </button>
-            </div>
-        </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="chat-header">
-                <div class="header-info">
-                    <h1>AI PrivacyShield</h1>
-                    <span class="secure-badge"><i class="fa-solid fa-circle"></i> Privacy Protection Active</span>
-                </div>
-                <div class="header-controls">
-                    <select id="privacyModeToggle" class="header-select">
-                        <option value="partial">🔓 Partial Masking</option>
-                        <option value="strict">🔒 Strict Masking</option>
-                    </select>
-                    <div class="file-upload-wrapper">
-                        <input type="file" id="fileInput" class="file-input" accept=".txt,.pdf,.docx">
-                        <label for="fileInput" class="btn-upload"><i class="fa-solid fa-paperclip"></i> Attach</label>
-                    </div>
-                    <button id="clearChatBtn" class="btn-header btn-clear"><i class="fa-solid fa-trash-can"></i> Clear</button>
-                </div>
-            </header>
+<div class="app-shell">
 
-            <div class="chat-container">
-                <div class="chat-messages" id="chatMessages">
-                    <!-- Welcome State -->
-                    <div class="welcome-container" id="welcomeState">
-                        <div class="welcome-icon">
-                            <i class="fa-solid fa-shield-halved"></i>
-                        </div>
-                        <h2>AI PrivacyShield</h2>
-                        <p>Your intelligent AI assistant with built-in privacy protection. Ask me anything — your sensitive data is automatically detected and masked before processing.</p>
-                        <div class="welcome-features">
-                            <div class="welcome-chip"><i class="fa-solid fa-brain"></i> Ask Anything</div>
-                            <div class="welcome-chip"><i class="fa-solid fa-lock"></i> Auto PII Masking</div>
-                            <div class="welcome-chip"><i class="fa-solid fa-code"></i> Code Help</div>
-                            <div class="welcome-chip"><i class="fa-solid fa-file-shield"></i> File Encryption</div>
-                        </div>
-                    </div>
-                </div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
 
-                <div class="chat-input-container">
-                    <div id="maskPreviewBox" class="mask-preview hidden">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <span><strong>Masked:</strong> <span id="maskPreviewText"></span></span>
-                    </div>
-                    <form id="chatForm">
-                        <textarea id="promptInput" placeholder="Ask me anything..." rows="1"></textarea>
-                        <button type="submit" class="btn-send" id="sendBtn"><i class="fa-solid fa-arrow-up"></i></button>
-                    </form>
-                    <div class="typing-indicator hidden" id="typingIndicator">
-                        <span></span><span></span><span></span>
-                    </div>
-                    <div class="privacy-bar">
-                        <i class="fa-solid fa-lock"></i> Your data is scanned & masked before reaching AI models
-                    </div>
-                </div>
-            </div>
-        </main>
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="logo-text">
+        <span class="logo-name">AI PrivacyShield</span>
+        <span class="logo-tagline">Privacy Protected</span>
+      </div>
+      <button class="sidebar-collapse-btn" id="sidebarToggle" title="Collapse sidebar">
+        <i class="fa-solid fa-sidebar"></i>
+      </button>
     </div>
 
-    <!-- Modal for Scan Warning / Confirmation -->
-    <div id="warningModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-triangle-exclamation"></i> Sensitive Data Detected</h3>
-                <button class="close-btn" id="closeWarningBtn">&times;</button>
-            </div>
-            <div class="modal-body" id="warningBody">
-                <!-- Dynamic content -->
-            </div>
-            <div class="modal-footer" id="warningFooter">
-                <button class="btn-secondary" id="cancelBtn">Cancel</button>
-                <button class="btn-primary" id="confirmBtn">Send Masked</button>
-            </div>
+    <button class="btn-new-chat" id="newChatBtn">
+      <i class="fa-solid fa-plus"></i>
+      <span>New Chat</span>
+    </button>
+
+    <div class="sidebar-section">
+      <span class="sidebar-section-label">Quick Actions</span>
+      <button class="sidebar-action" data-action="scan">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <span>Scan My Text</span>
+      </button>
+      <button class="sidebar-action" data-action="privacy">
+        <i class="fa-solid fa-shield-check"></i>
+        <span>Check Privacy</span>
+      </button>
+      <button class="sidebar-action" data-action="file" id="sidebarFileBtn">
+        <i class="fa-solid fa-file-shield"></i>
+        <span>Analyze File</span>
+      </button>
+      <button class="sidebar-action" data-action="ask">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Ask AI</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section sidebar-history-section">
+      <span class="sidebar-section-label">Recents</span>
+      <div class="chat-history-list" id="chatHistoryList">
+        <div class="history-loading"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="privacy-status-badge">
+        <i class="fa-solid fa-shield-halved"></i>
+        <div>
+          <span class="ps-title">Privacy Protected</span>
+          <span class="ps-sub">Your data is safe with us</span>
         </div>
+      </div>
+      <div class="sidebar-footer-actions">
+        <button class="footer-btn" id="themeToggle" title="Toggle theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button class="footer-btn" id="settingsBtn" title="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+        <a href="/dashboard" class="footer-btn" title="Dashboard">
+          <i class="fa-solid fa-chart-line"></i>
+        </a>
+        <a href="/history" class="footer-btn" title="Full History">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="main-area">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="topbar-menu-btn" id="mobileSidebarBtn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-brand">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>AI PrivacyShield</span>
+        </div>
+      </div>
+      <div class="topbar-center" id="topbarSessionName"></div>
+      <div class="topbar-right">
+        <div class="privacy-mode-pill">
+          <i class="fa-solid fa-lock"></i>
+          <select id="privacyModeToggle" title="Privacy Mode">
+            <option value="partial">Partial Mask</option>
+            <option value="strict">Strict Mask</option>
+          </select>
+        </div>
+        <div class="privacy-active-dot" title="Privacy Protection Active">
+          <span class="dot-pulse"></span>
+          Protected
+        </div>
+        <button class="topbar-icon-btn" id="clearChatBtn" title="Clear chat">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat Viewport -->
+    <div class="chat-viewport" id="chatViewport">
+
+      <!-- Welcome Screen -->
+      <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-orb">
+          <i class="fa-solid fa-shield-halved"></i>
+          <div class="orb-ring"></div>
+        </div>
+        <h1 class="welcome-title">AI PrivacyShield</h1>
+        <p class="welcome-subtitle">Your private information stays protected while you use AI.</p>
+
+        <div class="quick-action-grid">
+          <button class="qa-card" data-prompt="Please scan this text for any sensitive information: My email is test@example.com, phone is 9876543210, and Aadhaar is 1234-5678-9012">
+            <div class="qa-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></div>
+            <div class="qa-label">🔍 Scan My Text</div>
+            <div class="qa-desc">Detect &amp; mask PII instantly</div>
+          </button>
+          <button class="qa-card" data-prompt="What types of personal information does AI PrivacyShield detect and mask? Give me a detailed explanation with examples.">
+            <div class="qa-icon"><i class="fa-solid fa-shield-check"></i></div>
+            <div class="qa-label">🛡️ Check Privacy</div>
+            <div class="qa-desc">Learn what gets protected</div>
+          </button>
+          <button class="qa-card" id="qaFileBtn">
+            <div class="qa-icon"><i class="fa-solid fa-file-magnifying-glass"></i></div>
+            <div class="qa-label">📄 Analyze File</div>
+            <div class="qa-desc">Upload &amp; scan documents</div>
+          </button>
+          <button class="qa-card" data-prompt="Hi! I am ready to chat. What can you help me with today?">
+            <div class="qa-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="qa-label">✨ Ask AI</div>
+            <div class="qa-desc">Start a conversation</div>
+          </button>
+        </div>
+
+        <div class="welcome-privacy-note">
+          <i class="fa-solid fa-lock"></i>
+          All messages are scanned &amp; masked before reaching AI models
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-list" id="messagesList"></div>
+
+      <!-- Typing indicator -->
+      <div class="typing-row hidden" id="typingRow">
+        <div class="ai-avatar-sm"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="typing-bubble"><span></span><span></span><span></span></div>
+      </div>
     </div>
 
-    <!-- Mobile bottom navigation (phones only) -->
-    <nav class="mobile-nav">
-        <a href="/" class="active"><i class="fa-solid fa-message"></i>Chat</a>
-        <a href="/dashboard"><i class="fa-solid fa-chart-line"></i>Dashboard</a>
-        <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i>History</a>
-    </nav>
+    <!-- Input Zone -->
+    <div class="input-zone">
+      <!-- Mask Banner -->
+      <div class="mask-banner hidden" id="maskBanner">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span id="maskBannerText">Sensitive data will be masked before sending</span>
+        <button class="mask-banner-close" id="maskBannerClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+      <!-- File Preview -->
+      <div class="file-preview hidden" id="filePreview">
+        <div class="file-preview-inner">
+          <i class="fa-solid fa-file-lines"></i>
+          <span id="filePreviewName"></span>
+          <span class="file-preview-size" id="filePreviewSize"></span>
+        </div>
+        <button class="file-preview-remove" id="filePreviewRemove"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Form -->
+      <form class="chat-input-form" id="chatForm" autocomplete="off">
+        <label for="fileInputInline" class="input-icon-btn" title="Attach file">
+          <i class="fa-solid fa-paperclip"></i>
+          <input type="file" id="fileInputInline" accept=".txt,.pdf,.docx" hidden>
+        </label>
+        <textarea id="promptInput" class="chat-textarea" placeholder="Type your message..." rows="1" maxlength="4000"></textarea>
+        <button type="submit" class="send-btn" id="sendBtn" disabled>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+
+      <!-- Inline quick actions -->
+      <div class="input-quick-actions">
+        <button class="iqa-btn" data-action="scan"><i class="fa-solid fa-magnifying-glass"></i> Scan my text</button>
+        <button class="iqa-btn" data-action="privacy"><i class="fa-solid fa-shield-halved"></i> Check privacy</button>
+        <button class="iqa-btn" data-action="file" id="iqaFileBtn"><i class="fa-solid fa-file"></i> Analyze file</button>
+        <button class="iqa-btn" data-action="ask"><i class="fa-solid fa-wand-magic-sparkles"></i> Ask AI</button>
+      </div>
+
+      <div class="input-footer-note">
+        <i class="fa-solid fa-shield-check"></i>
+        AI PrivacyShield scans &amp; masks your data before every AI request
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-overlay hidden" id="settingsOverlay">
+  <div class="settings-panel">
+    <div class="settings-header">
+      <h2><i class="fa-solid fa-gear"></i> Settings</h2>
+      <button class="settings-close" id="settingsClose"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-group">
+        <label class="setting-label">Appearance</label>
+        <div class="theme-toggle-row">
+          <button class="theme-opt" data-theme="dark" id="themeDarkBtn"><i class="fa-solid fa-moon"></i> Dark</button>
+          <button class="theme-opt" data-theme="light" id="themeLightBtn"><i class="fa-solid fa-sun"></i> Light</button>
+        </div>
+      </div>
+      <div class="setting-group">
+        <label class="setting-label">Privacy Mode</label>
+        <select class="settings-select" id="settingsPrivacyMode">
+          <option value="partial">Partial Masking (shows last 4 digits)</option>
+          <option value="strict">Strict Masking (fully redacts all data)</option>
+        </select>
+        <p class="setting-hint">Controls how detected sensitive data is masked in your messages.</p>
+      </div>
+      <div class="setting-group">
+        <label class="setting-label">Quick Links</label>
+        <a href="/dashboard" class="settings-link-btn"><i class="fa-solid fa-chart-line"></i> View Dashboard</a>
+        <a href="/history" class="settings-link-btn"><i class="fa-solid fa-clock-rotate-left"></i> Full Chat History</a>
+        <button class="settings-link-btn danger" id="clearAllFilesBtn"><i class="fa-solid fa-file-circle-xmark"></i> Delete All Uploaded Files</button>
+        <button class="settings-link-btn danger" id="clearAllHistoryBtn"><i class="fa-solid fa-trash-can"></i> Clear All History</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRIVACY CONFIRM MODAL -->
+<div class="modal-overlay hidden" id="privacyModal">
+  <div class="privacy-modal">
+    <div class="pm-header">
+      <div class="pm-title">
+        <div class="pm-shield-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+          <span class="pm-title-text">Privacy Scan Complete</span>
+          <span class="pm-subtitle-text">Sensitive data detected &amp; ready to mask</span>
+        </div>
+      </div>
+      <button class="pm-close" id="pmClose"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="pm-body" id="pmBody"></div>
+    <div class="pm-footer">
+      <button class="pm-btn-cancel" id="pmCancel">Cancel</button>
+      <button class="pm-btn-send" id="pmSend">
+        <i class="fa-solid fa-shield-halved"></i>
+        Send Masked Version
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- FILE WARNING MODAL -->
+<div class="modal-overlay hidden" id="fileWarningModal">
+  <div class="privacy-modal">
+    <div class="pm-header">
+      <div class="pm-title">
+        <div class="pm-shield-icon warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+          <span class="pm-title-text" style="color:var(--warning)">File Security Alert</span>
+          <span class="pm-subtitle-text">Sensitive data found in uploaded file</span>
+        </div>
+      </div>
+      <button class="pm-close" id="fwClose"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="pm-body" id="fwBody"></div>
+    <div class="pm-footer">
+      <button class="pm-btn-send" id="fwAck" style="background:var(--warning)">Got it, Thanks</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="fileInput" accept=".txt,.pdf,.docx" hidden>
+
+<!-- Mobile Nav -->
+<nav class="mobile-nav">
+  <a href="/" class="active"><i class="fa-solid fa-message"></i><span>Chat</span></a>
+  <a href="/dashboard"><i class="fa-solid fa-chart-line"></i><span>Stats</span></a>
+  <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></a>
+</nav>
+
+<script src="{{ url_for('static', filename='js/main.js') }}?v=6"></script>
 </body>
 </html>

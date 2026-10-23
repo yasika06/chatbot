@@ -2,6 +2,8 @@ __pycache__/
 *.rc
 .env
 privacy_bot.db
+database.db
+*.db
 uploads/
 encrypted_uploads/
 .vercel

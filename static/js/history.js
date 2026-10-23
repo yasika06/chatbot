@@ -96,7 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirm('Are you sure you want to completely delete all stored (uploaded and encrypted) files? This cannot be undone.')) return;
             const res = await fetch('/api/files/delete', { method: 'POST' });
             if (res.ok) {
-                alert('All stored files have been securely deleted from the server.');
+                const data = await res.json();
+                alert(data.message || 'All stored files have been securely deleted from the server.');
+                loadHistory(historyPwd.value);
             } else {
                 alert('Failed to delete files. Check server logs.');
             }

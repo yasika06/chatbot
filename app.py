@@ -6,11 +6,19 @@ from werkzeug.utils import secure_filename
 from openai import OpenAI
 from dotenv import load_dotenv
 
+import time
+import uuid
+
 # Load environment variables
 load_dotenv()
 
 from config import Config
-from database import init_db, update_stat, get_stats, save_chat, get_history, set_setting, get_setting, delete_history, toggle_lock
+from database import (
+    init_db, update_stat, get_stats, save_chat, get_history,
+    set_setting, get_setting, delete_history, toggle_lock,
+    get_sessions, get_session, delete_session, create_or_update_session, format_title,
+    reset_file_stats, delete_file_history_entries
+)
 from security_scanner import scan_and_mask, preprocess_and_mask
 from file_processor import extract_text_from_file, encrypt_file
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -94,6 +102,13 @@ def chat():
     confirm = data.get('confirm', False)
     history_context = data.get('history', [])
     privacy_mode = data.get('privacy_mode', 'partial')
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        session_id = f"sess_{int(time.time())}_{uuid.uuid4().hex[:6]}"
+        create_or_update_session(session_id, user_prompt)
+    else:
+        create_or_update_session(session_id)
     
     if not user_prompt:
         return jsonify({"error": "Prompt is required"}), 400
@@ -123,7 +138,17 @@ def chat():
         if client and client_type == 'gemini':
             gemini_models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"]
             
-            contents = ["System: You are a highly knowledgeable, friendly, and helpful AI assistant. You can answer any question on any topic — including science, technology, coding, math, history, geography, health, creative writing, general knowledge, daily life advice, and more. Always provide clear, accurate, and detailed answers. If the user asks in Tamil or Tanglish, reply in the same language. You also have built-in privacy protection that automatically masks sensitive data before it reaches you."]
+            SYSTEM_PROMPT = (
+                "You are AI PrivacyShield, a highly knowledgeable, friendly, and privacy-focused AI assistant. "
+                "Answer any question clearly using Markdown formatting: use **bold** for emphasis, headings (## or ###) for long answers, "
+                "bullet points for lists, numbered lists for steps, and code blocks (```) for code. "
+                "For long answers, start with a short 1-2 sentence summary, then give details. "
+                "Keep responses concise and well-structured — avoid single huge paragraphs. "
+                "You have built-in privacy protection that automatically masks sensitive personal data (emails, phones, Aadhaar, etc.) before messages reach you. "
+                "If the user asks in Tamil or Tanglish, reply in the same language. "
+                "Be conversational, helpful, and accurate."
+            )
+            contents = ["System: " + SYSTEM_PROMPT]
             for msg in history_context:
                 prefix = "User: " if msg.get('role') == "user" else "Assistant: "
                 contents.append(prefix + str(msg.get('content', '')))
@@ -158,7 +183,17 @@ def chat():
                 
             print(f"OK: Direct API call to OpenAI/Groq ({active_model}) with history context...")
             
-            messages = [{"role": "system", "content": "You are a highly knowledgeable, friendly, and helpful AI assistant. You can answer any question on any topic — including science, technology, coding, math, history, geography, health, creative writing, general knowledge, daily life advice, and more. Always provide clear, accurate, and detailed answers. If the user asks in Tamil or Tanglish, reply in the same language. You also have built-in privacy protection that automatically masks sensitive data before it reaches you."}]
+            SYSTEM_PROMPT = (
+                "You are AI PrivacyShield, a highly knowledgeable, friendly, and privacy-focused AI assistant. "
+                "Answer any question clearly using Markdown formatting: use **bold** for emphasis, headings (## or ###) for long answers, "
+                "bullet points for lists, numbered lists for steps, and code blocks (```) for code. "
+                "For long answers, start with a short 1-2 sentence summary, then give details. "
+                "Keep responses concise and well-structured — avoid single huge paragraphs. "
+                "You have built-in privacy protection that automatically masks sensitive personal data (emails, phones, Aadhaar, etc.) before messages reach you. "
+                "If the user asks in Tamil or Tanglish, reply in the same language. "
+                "Be conversational, helpful, and accurate."
+            )
+            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
             for msg in history_context:
                 role = "user" if msg.get('role') == "user" else "assistant"
                 messages.append({"role": role, "content": msg.get('content', '')})
@@ -195,10 +230,16 @@ def chat():
         ai_response = "I am a mock response because the API key is missing. I would have replied to: " + masked_prompt
             
     # record the interaction. We replace user_prompt with masked_prompt so no raw data is saved
-    chat_id = save_chat(masked_prompt, masked_prompt, ai_response, sensitive=bool(findings))
+    chat_id = save_chat(masked_prompt, masked_prompt, ai_response, sensitive=bool(findings), session_id=session_id)
     
+    # Get current session info
+    current_sess = get_session(session_id)
+    session_title = current_sess.get('title') if current_sess else format_title(user_prompt)
+
     return jsonify({
         "id": chat_id,
+        "session_id": session_id,
+        "session_title": session_title,
         "original_prompt": user_prompt,
         "masked_prompt": masked_prompt,
         "findings": findings,
@@ -336,7 +377,9 @@ def lock_history_entry():
 
 @app.route('/api/files/delete', methods=['POST'])
 def delete_all_files():
-    # Delete everything in UPLOAD_FOLDER and ENCRYPTED_FOLDER
+    deleted_count = 0
+    errors = []
+    # 1. Delete physical files from UPLOAD_FOLDER and ENCRYPTED_FOLDER
     for folder_path in [app.config['UPLOAD_FOLDER'], app.config['ENCRYPTED_FOLDER']]:
         if os.path.exists(folder_path):
             for filename in os.listdir(folder_path):
@@ -344,9 +387,48 @@ def delete_all_files():
                 try:
                     if os.path.isfile(file_path):
                         os.unlink(file_path)
+                        deleted_count += 1
                 except Exception as e:
+                    errors.append(f"{filename}: {e}")
                     print(f"Failed to delete {file_path}. Reason: {e}")
-    return jsonify({"status": "success"})
+
+    # 2. Reset database stats (files_uploaded=0, files_encrypted=0)
+    reset_file_stats()
+
+    # 3. Clean up file-related history entries
+    delete_file_history_entries()
+
+    return jsonify({
+        "status": "success",
+        "message": "All stored files deleted, file counters reset, and file records cleared.",
+        "deleted_count": deleted_count,
+        "errors": errors
+    })
+
+@app.route('/api/sessions', methods=['GET'])
+def list_sessions():
+    """Return all chat sessions sorted by latest activity for ChatGPT-style Recents sidebar."""
+    return jsonify({"sessions": get_sessions()})
+
+@app.route('/api/session/<session_id>', methods=['GET'])
+def session_details(session_id):
+    """Return session metadata and all conversation messages in order."""
+    sess = get_session(session_id)
+    if not sess:
+        return jsonify({"error": "Session not found"}), 404
+    return jsonify({"session": sess})
+
+@app.route('/api/session/<session_id>', methods=['DELETE'])
+def remove_session(session_id):
+    """Delete a session and all its messages."""
+    delete_session(session_id)
+    return jsonify({"status": "success", "session_id": session_id})
+
+@app.route('/api/chat-sessions', methods=['GET'])
+def chat_sessions():
+    """Return sessions for the sidebar."""
+    return jsonify({'sessions': get_sessions()})
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
